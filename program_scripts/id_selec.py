@@ -46,6 +46,7 @@ def id_selection_func(tables, cond):
                 exclusion_filter = lambda x: any(match(v, x) for v in exclude) # func to get ids to exclude (if !-val is in list)
                 excluded_ids = ids.loc[ids[col].apply(lambda x: exclusion_filter(x)), "StudieID"].tolist()
                 ids = ids[~ids["StudieID"].isin(excluded_ids)]
+                val["values"] = [v for v in val["values"] if not v.startswith("!")] # remove !-value leftovers
                 
                 if val["values"] == ["any"]:
                     ids = ids[ids[col].notna()]

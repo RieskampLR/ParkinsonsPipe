@@ -100,9 +100,9 @@ if "-pt" in sys.argv and "-ptf" in sys.argv:
     exit()
 
 if args.pharma is not None:
-    incl_filter = args.pharma
+    incl_filter = args.pharma[0] if args.pharma else None
 elif args.pharmafiltered is not None:
-    incl_filter = args.pharmafiltered
+    incl_filter = args.pharmafiltered [0] if args.pharma else None
 else:
     incl_filter = None
     
@@ -153,9 +153,9 @@ with open(conds_file) as json_file:
 
 # Error catches
 
-# Requesting filtered meds in pharma table without subnamn condition
-if "-ptf" in sys.argv and "subnamn" not in cond["pdat"]:
-    print("You have no subnamn condition in your conditions JSON file. Include a subnamn condition or change -ptf to -pt in the command line")
+# Requesting filtered meds in pharma table without subnamn or ATC condition
+if "-ptf" in sys.argv and ("subnamn" not in cond["pdat"] and "ATC" not in cond["pdat"]):
+    print("You have no subnamn or ATC condition in your conditions JSON file. Include a subnamn and/or ATC condition or change -ptf to -pt in the command line")
     exit()
 
 # Requesting columns based on data that is not provided

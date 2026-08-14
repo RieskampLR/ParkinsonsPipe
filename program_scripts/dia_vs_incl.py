@@ -29,33 +29,27 @@ def diagnosis_vs_inclusion_time_func(func_dats):
         
         year = qdat.set_index("StudieID")["Inclusion_Year"].astype(int)
         
-        # IDs where INDATUMA ==, <=, or > Inclusion_Year +- 1
-        
-        ids_atInc = pd.concat([
-            hvdat.loc[(hvdat["INDATUMA"].astype(str).str[:4].astype(int) - hvdat["StudieID"].map(year)).abs() <= 1, "StudieID"]
-        ]).unique()
-        
-        
-        ids_tillInc = pd.concat([
-            hvdat.loc[hvdat["INDATUMA"].astype(str).str[:4].astype(int) <= hvdat["StudieID"].map(year) + 1, "StudieID"]
-        ]).unique()
-        # Includes diagnoses recorded at inclusion and inclusion + 1 year
-        
-        
-        ids_afterInc = pd.concat([
-            hvdat.loc[hvdat["INDATUMA"].astype(str).str[:4].astype(int) > hvdat["StudieID"].map(year), "StudieID"]
-        ]).unique()
-        ids_afterInc = np.setdiff1d(ids_afterInc, ids_tillInc)
+        doc_combined = pd.concat([hdat, vdat], ignore_index=True)
+        visit_year = doc_combined["INDATUMA"].astype(str).str[:4].astype(int)
+        incl_year = doc_combined["StudieID"].map(year)
+         
+        masks = [
+            visit_year > incl_year,
+            (visit_year - incl_year).abs() <= 1,
+            visit_year <= incl_year + 1,
+        ]
         
         
         counter = 0
         
-        for ids in [ids_afterInc, ids_atInc, ids_tillInc]:
+        
+        for mask in masks: 
         
             # get diagnoses for these
             cols = ["StudieID"] + ["hdia"] + [c for c in hdat.columns if c.startswith("DIA") and c!= "DIA_ANT"]
             doc_combined = pd.concat([hdat, vdat], ignore_index=True)
-            result = doc_combined.loc[doc_combined["StudieID"].isin(ids), cols]
+            result = doc_combined.loc[mask, cols]
+
             
             # To 1 coloumn
             col_name = col_names[counter]
@@ -64,6 +58,7 @@ def diagnosis_vs_inclusion_time_func(func_dats):
                 result.drop(columns="StudieID").fillna("").astype(str).agg(",".join, axis=1)
                 .str.replace(r"(,+)", ",", regex=True).str.strip(","))
             result = result[["StudieID", col_name]]
+            
             
             # Each patient once (diagnoses fused)
             result = result.groupby("StudieID", as_index=False).agg({col_name: ",".join})
